@@ -40,7 +40,24 @@
     
     <canvas id="myChart"></canvas>
   </div>
+  <script>
+    // We request a database instance.
+    const request = indexedDB.open("budgetDB", 1);
+    
+    // Create an object store inside the onupgradeneeded method.
+    request.onupgradeneeded = ({ target }) => {
+        const db = target.result;
+        const deposits = db.createObjectStore("deposits", "deposits");
+        const expenses = db.createObjectStore("expenses", "expenses");
+      };
 
+   // On success console the result.
+    request.onsuccess = event => {
+    console.log(request.result);
+      };
+   
+  </script>
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
   <script src="index.js"></script>
 </body>
