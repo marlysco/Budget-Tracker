@@ -44,11 +44,18 @@
     // We request a database instance.
     const request = indexedDB.open("budgetDB", 1);
     
-    // Create an object store inside the onupgradeneeded method.
-    request.onupgradeneeded = ({ target }) => {
-        const db = target.result;
-        const deposits = db.createObjectStore("deposits", "deposits");
-        const expenses = db.createObjectStore("expenses", "expenses");
+    // Create an schema
+    request.onupgradeneeded = event => {
+      const db = event.target.result;
+      //Object Store: Transaction
+      const transactionStore = db.createObjectStore("transaction", "transaction", {keyPath:"traxID"});
+      // Create a statusIndex that we can query on.
+      transactionStore.createIndex("statusIndex", "status"); 
+     
+      //Adding data to the Transaction Object Store
+      transactionStore.add({traxID: "1", status: "deposit"});
+      transactionStore.add({traxID: "1", status: "withdrawal"});
+
       };
 
    // On success console the result.
