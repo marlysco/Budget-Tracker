@@ -41,45 +41,85 @@
     <canvas id="myChart"></canvas>
   </div>
 
-  //IndexedDB code 
+  
   <script>
+    //IndexedDB code 
     //Opening a database instance.
     const request = indexedDB.open("budgetDB", 1);
-    
+
     // Create an schema
     request.onupgradeneeded = event => {
       const db = event.target.result;
       //Object Store: Budget
-      const budgetStore = db.createObjectStore("budget", "budget", {keyPath:"traxID"});
-      // Create a index that we can query on. Type will be: withdrawal, deposit or balance.
-      // budgetStore.createIndex("type", "type", { unique: false }); 
+      const budgetStore = db.createObjectStore("budget", {autoIncrement: true});
+      // Create a index that we can query on.
+      const index= budgetStore.createIndex("txData", "txData", { unique: false }); 
     }
     
-      //Opening transaction
-      request.onsuccess = () => {
+    request.onsuccess = event => {
+    db = event.target.result;
+    if(navigator.onLine) checDB();
+    }
+
+   //Fx to get and send all the data 
+    function checkDB() {
         const db = request.result;
-        const transaction = db.transaction(["budget"], "readwrite");
+        const transaction = db.transaction("budget", "readwrite");
         const budgetStore = transaction.objectStore("budget");
-        // const type = budgetStore.index("type");
-      //Ading data to the budgetStore
+        const AllData = budgetStore.getAll();
+
+        AllData.onsuccess = () => {
+          if(AllData.result.length > 0) {
+            fetch("/api/transaction/bulk", {
+            method: "POST",
+            body: JSON.stringify(AllData.result),
+            headers: {
+            Accept: "application/json, text/plain, */*",
+            "Content-Type": "application/json"
+             },
+          })
+          . then ((response) => response.json())
+          .then(()=> {
+            const transaction = db.transaction("budget", "readwrite");
+            const budgetStore = transaction.objectStore("budget");
+            const clearData = budgetStore.clear();
+            transaction.oncomplete = function () {
+             db.close();
+                }
+          })
+        }
+      }}
+    
+    //Fx to save the tx data
+     function saveTransaction(record) {
+        const db = request.result;
+        const transaction = db.transaction("budget", "readwrite");
+        const budgetStore = transaction.objectStore("budget");
+        const index = budgetStore.index("txData");
+      //Ading data the to the budgetStore
       budgetStore.add({value: record.value, name: record.name, date: record.date})
+      //Closing the tx
+      transaction.oncomplete = function () {
+        db.close();
       }
-
-
-     // On error console the error
-      request.onerror = function(event) {
+     }
+        
+      // On error console the error
+     request.onerror = function(event) {
         console.log(request.error);
       };
 
-   
       // On success console the result.
       request.onsuccess = event => {
         console.log(request.result);
       };
    
+   //Listening the online event
+   window.addEventListener('online', checkDB);
   </script>
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
   <script src="index.js"></script>
-</body>
+
+  </body>
 </html>
