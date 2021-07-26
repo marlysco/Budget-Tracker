@@ -40,27 +40,41 @@
     
     <canvas id="myChart"></canvas>
   </div>
+
+  //IndexedDB code 
   <script>
-    // We request a database instance.
+    //Opening a database instance.
     const request = indexedDB.open("budgetDB", 1);
     
     // Create an schema
     request.onupgradeneeded = event => {
       const db = event.target.result;
-      //Object Store: Transaction
-      const transactionStore = db.createObjectStore("transaction", "transaction", {keyPath:"traxID"});
-      // Create a statusIndex that we can query on.
-      transactionStore.createIndex("statusIndex", "status"); 
-     
-      //Adding data to the Transaction Object Store
-      transactionStore.add({traxID: "1", status: "deposit"});
-      transactionStore.add({traxID: "1", status: "withdrawal"});
+      //Object Store: Budget
+      const budgetStore = db.createObjectStore("budget", "budget", {keyPath:"traxID"});
+      // Create a index that we can query on. Type will be: withdrawal, deposit or balance.
+      // budgetStore.createIndex("type", "type", { unique: false }); 
+    }
+    
+      //Opening transaction
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(["budget"], "readwrite");
+        const budgetStore = transaction.objectStore("budget");
+        // const type = budgetStore.index("type");
+      //Ading data to the budgetStore
+      budgetStore.add({value: record.value, name: record.name, date: record.date})
+      }
 
+
+     // On error console the error
+      request.onerror = function(event) {
+        console.log(request.error);
       };
 
-   // On success console the result.
-    request.onsuccess = event => {
-    console.log(request.result);
+   
+      // On success console the result.
+      request.onsuccess = event => {
+        console.log(request.result);
       };
    
   </script>
